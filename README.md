@@ -1,8 +1,8 @@
 # Gobble Break — The Great Thanksgiving Escape
 
 [![make.fun · turkey-run-game-01](https://make.fun/badge/turkey-run-game-01.svg)](https://make.fun/bounty/turkey-run-game-01?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
-[![rank](https://make.fun/badge/turkey-run-game-01/jnesarimas-create/turkey-run-game-01/rank.svg)](https://make.fun/bounty/turkey-run-game-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
-[![reward](https://make.fun/badge/turkey-run-game-01/jnesarimas-create/turkey-run-game-01/reward.svg)](https://make.fun/bounty/turkey-run-game-01?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
+[![rank](https://make.fun/badge/turkey-run-game-01/jnesarimas-create/turkey-escape-game/rank.svg)](https://make.fun/bounty/turkey-run-game-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
+[![reward](https://make.fun/badge/turkey-run-game-01/jnesarimas-create/turkey-escape-game/reward.svg)](https://make.fun/bounty/turkey-run-game-01?utm_source=github&utm_medium=readme&utm_campaign=turkey-run-game-01)
 
 A make.fun `turkey-run-game-01` entry: a complete HTML5 Canvas 2D
 side-scrolling runner. Barnaby the turkey escapes Farmer Jed, the roasting
