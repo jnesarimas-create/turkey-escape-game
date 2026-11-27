@@ -18,7 +18,7 @@ vanilla HTML/CSS/classic scripts (no modules, so it runs from file:// too), Canv
 - **W / ↑ / Space** (or left mouse hold) — jump; hold to flutter-glide- **S / ↓** — duck / fast-fall
 - **A / D** — run left / right
 - **Shift / E** (or right mouse click) — feather dash
-- **P / Esc** — pause, **M** — mute, **R / Enter** — restart
+- **P / Esc** — pause, **M** — mute, **R / Enter** — restart (from pause or end screen)
 
 HUD: score, distance (m), 3 lives, dash gauge, combo (x1–x5), zone label.
 Close calls (a knife within 28 px) pay +150. Hit-stop, screen shake, 1.2 s
@@ -28,6 +28,8 @@ invulnerability blink, 110 ms coyote time, 120 ms jump buffer.
 
 - `main.ts` — entry program: copies `game/` + `screenshots/` to `/output`,
   writes `dossier.json` via the vendored make.fun library.
+- `serve.ts` — local static server for the game (`node serve.ts`,
+  then http://localhost:8080).
 - `game/main.js` — boot + fixed-timestep loop (1/60 s, dt clamped).
 - `game/data/` — tuning (`config.js`) and biomes (`biomes.js`).
 - `game/engine/` — deterministic RNG, best-score storage, keyboard+mouse
