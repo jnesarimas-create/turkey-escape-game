@@ -12,7 +12,10 @@ const MAX_FRAME = 0.25;
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
 const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
-const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() * 4294967296);
+// Shot mode must be deterministic: default to seed 1 when ?shot= is used
+// without an explicit &seed= (a random seed would make screenshots differ).
+const seed = Number.isInteger(seedParam) ? seedParam
+  : (shot ? 1 : Math.floor(Math.random() * 4294967296));
 
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
@@ -35,15 +38,27 @@ fitCanvas();
 function draw(state, screen, best, time) {
   const biome = biomeAt(state.distance);
   const scroll = state.distance * 10;
+  // Clear before any transform so no smeared frame is left behind.
+  ctx.clearRect(0, 0, FIELD.width, FIELD.height);
+  // World layer, with screen shake. The shake offset is a deterministic
+  // function of time (never Math.random()), so a staged shot scene paints
+  // identically every time.
   ctx.save();
   if (state.shake > 0) {
-    ctx.translate((Math.random() - 0.5) * state.shake * 24, (Math.random() - 0.5) * state.shake * 24);
+    ctx.translate(
+      Math.sin(time * 97.3) * state.shake * 12,
+      Math.cos(time * 131.7) * state.shake * 12,
+    );
   }
   drawBackground(ctx, biome, scroll, time);
   for (const o of state.obstacles) if (o.active) drawObstacle(ctx, o, time);
   for (const p of state.pickups) if (p.active) drawPickup(ctx, p, time);
   drawFarmer(ctx, state.turkey, state.farmer, time);
   drawTurkey(ctx, state.turkey, time);
+  ctx.restore();
+  // HUD, screens and flash are drawn outside the shake transform so they
+  // stay legible and stable while the world shakes.
+  ctx.save();
   if (screen === SCREEN_PLAY || screen === SCREEN_PAUSED) drawHud(ctx, state, best, sound.muted);
   if (screen === SCREEN_TITLE) drawTitle(ctx, best, time);
   if (screen === SCREEN_PAUSED) drawPaused(ctx);
@@ -74,6 +89,12 @@ function runGame() {
   let accumulator = 0;
   let last = performance.now();
   let musicZone = '';
+  // Edge-triggered actions (jump, dash, ...) are latched here. handleActions()
+  // drains the one-shot flags every rAF, but a fixed step only runs on some
+  // frames: on 120/144 Hz frames 0 steps run (the press would be lost), and
+  // on slow frames 2-8 steps run (the same press would re-fire). Latching
+  // keeps a press until the first step consumes it, and only that step sees it.
+  let pendingActions = 0;
 
   function announce(message) { status.textContent = message; }
 
@@ -105,6 +126,10 @@ function runGame() {
     if (actions & ACTION_PAUSE && screen === SCREEN_PLAY) { screen = SCREEN_PAUSED; sound.stopMusic(); announce('Paused.'); }
     else if (actions & (ACTION_PAUSE | ACTION_CONFIRM) && screen === SCREEN_PAUSED) {
       screen = SCREEN_PLAY; sound.startMusic(biomeAt(world.state.distance)); announce('Playing.');
+      // Resume must not leak the confirm/jump that unpaused into the run:
+      // drop the accumulated time and the actions for this frame.
+      accumulator = 0;
+      return 0;
     }
     return actions;
   }
@@ -135,20 +160,28 @@ function runGame() {
 
   function frame(now) {
     requestAnimationFrame(frame);
-    const dt = Math.min((now - last) / 1000, MAX_FRAME);
+    const dt = Math.max(0, Math.min((now - last) / 1000, MAX_FRAME));
     last = now;
-    const actions = handleActions();
+    pendingActions |= handleActions();
     if (screen === SCREEN_TITLE || screen === SCREEN_PLAY) {
       accumulator += dt;
       let guard = 0;
+      let firstTick = true;
       while (accumulator >= STEP && guard < 8 && (screen === SCREEN_TITLE || screen === SCREEN_PLAY)) {
-        stepFrame(actions);
+        // Only the first tick of this frame sees the latched edge actions.
+        const tickActions = firstTick ? pendingActions : 0;
+        firstTick = false;
+        stepFrame(tickActions);
         accumulator -= STEP;
         guard += 1;
       }
+      // Consume the latch only if a step actually ran; otherwise the press
+      // stays latched for the next frame (e.g. a 120 Hz frame with 0 steps).
+      if (guard > 0) pendingActions = 0;
       if (guard === 8) accumulator = 0;
     } else {
       accumulator = 0;
+      pendingActions = 0;
     }
     draw(world.state, screen, best, now / 1000);
   }
